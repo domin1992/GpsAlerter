@@ -4,6 +4,7 @@ import android.app.AlertDialog;
 import android.content.Context;
 import android.content.DialogInterface;
 import android.content.pm.PackageManager;
+import android.graphics.Color;
 import android.location.Address;
 import android.location.Geocoder;
 import android.location.Location;
@@ -29,6 +30,7 @@ import com.google.android.gms.maps.GoogleMap;
 import com.google.android.gms.maps.OnMapReadyCallback;
 import com.google.android.gms.maps.SupportMapFragment;
 import com.google.android.gms.maps.model.Circle;
+import com.google.android.gms.maps.model.CircleOptions;
 import com.google.android.gms.maps.model.LatLng;
 import com.google.android.gms.maps.model.Marker;
 import com.google.android.gms.maps.model.MarkerOptions;
@@ -151,6 +153,19 @@ public class MapsActivity extends AppCompatActivity implements OnMapReadyCallbac
         mMap.setMyLocationEnabled(true);
         mMap.moveCamera(CameraUpdateFactory.newLatLng(current));
         mMap.animateCamera(CameraUpdateFactory.zoomTo(12), 2000, null);
+
+        mMap.setOnMapLongClickListener(new GoogleMap.OnMapLongClickListener() {
+            @Override
+            public void onMapLongClick(LatLng latLng) {
+                if(mainMarker != null)
+                    mainMarker.remove();
+                if(destinationCircle != null)
+                    destinationCircle.remove();
+                destinationSelected = false;
+                userAlerted = false;
+                setMarker(latLng.latitude, latLng.longitude);
+            }
+        });
     }
 
     public void setAddress(){
@@ -225,7 +240,7 @@ public class MapsActivity extends AppCompatActivity implements OnMapReadyCallbac
                         destinationCircle.remove();
                     destinationSelected = false;
                     userAlerted = false;
-                    // set marker
+                    setMarker(addresses.get(position).getLatitude(), addresses.get(position).getLongitude());
                     dialog.dismiss();
                 }
             });
@@ -269,5 +284,26 @@ public class MapsActivity extends AppCompatActivity implements OnMapReadyCallbac
 
     public void distanceChanged(){
         destinationCircle.setRadius(finishDistance);
+    }
+
+    public void setMarker(double lat, double lon){
+        LatLng destinationCoords = new LatLng(lat, lon);
+        mainMarker = mMap.addMarker(new MarkerOptions()
+                .position(destinationCoords)
+                .title("Miejsce docelowe")
+        );
+        mMap.moveCamera(CameraUpdateFactory.newLatLng(destinationCoords));
+
+        CircleOptions circleOptions = new CircleOptions()
+                .center(destinationCoords)
+                .radius(finishDistance)
+                .fillColor(Color.argb(128, 63, 81, 181))
+                .strokeWidth(0);
+
+        destinationCircle = mMap.addCircle(circleOptions);
+        destinationSelected = true;
+        userAlerted = false;
+        finishLat = lat;
+        finishLon = lon;
     }
 }
