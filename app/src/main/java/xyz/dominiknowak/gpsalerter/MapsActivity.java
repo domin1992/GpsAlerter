@@ -41,6 +41,11 @@ public class MapsActivity extends AppCompatActivity implements OnMapReadyCallbac
 
     private GoogleMap mMap;
 
+    public double finishLat = 51.7958859;
+    public double finishLon = 19.4897299;
+
+    public int finishDistance = 500;
+
     public boolean destinationSelected = false;
     public boolean userAlerted = false;
 
@@ -73,7 +78,7 @@ public class MapsActivity extends AppCompatActivity implements OnMapReadyCallbac
                 setAddress();
                 return true;
             case R.id.distance:
-                // set distance
+                setDistance();
                 return true;
             case R.id.removeMarkers:
                 if(mainMarker != null)
@@ -234,5 +239,35 @@ public class MapsActivity extends AppCompatActivity implements OnMapReadyCallbac
             Toast toast = Toast.makeText(context, text, duration);
             toast.show();
         }
+    }
+
+    public void setDistance(){
+        AlertDialog.Builder builder = new AlertDialog.Builder(MapsActivity.this);
+        LayoutInflater inflater = MapsActivity.this.getLayoutInflater();
+        final View dialogView = inflater.inflate(R.layout.dialog_distance, null);
+        builder.setView(dialogView);
+        builder.setPositiveButton(R.string.save, new DialogInterface.OnClickListener() {
+            @Override
+            public void onClick(DialogInterface dialog, int id) {
+                EditText etDistance = (EditText)dialogView.findViewById(R.id.etDistance);
+                if(etDistance != null && !etDistance.getText().toString().isEmpty()) {
+                    finishDistance = Integer.parseInt(etDistance.getText().toString());
+                    distanceChanged();
+                }
+                dialog.dismiss();
+            }
+        });
+        builder.setNegativeButton(R.string.cancel, new DialogInterface.OnClickListener() {
+            public void onClick(DialogInterface dialog, int id) {
+                dialog.dismiss();
+            }
+        });
+
+        AlertDialog dialog = builder.create();
+        dialog.show();
+    }
+
+    public void distanceChanged(){
+        destinationCircle.setRadius(finishDistance);
     }
 }
