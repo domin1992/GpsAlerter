@@ -1,4 +1,11 @@
 <resources>
-    <string name="app_name">GpsAlerter</string>
-    <string name="title_activity_maps">Map</string>
+    <string name="app_name">GPS Alerter</string>
+    <string name="title_activity_maps">GPS Alerter</string>
+    <string name="save">Zapisz</string>
+    <string name="cancel">Anuluj</string>
+    <string name="address">Adres</string>
+    <string name="write_address">Wpisz adres docelowy</string>
+    <string name="select_address">Czy chodziło Ci o</string>
+    <string name="write_distance">Wpisz dystans (metry)</string>
+    <string name="distance">Dystans</string>
 </resources>

@@ -1,16 +1,27 @@
 package xyz.dominiknowak.gpsalerter;
 
+import android.app.AlertDialog;
 import android.content.Context;
+import android.content.DialogInterface;
 import android.content.pm.PackageManager;
+import android.location.Address;
+import android.location.Geocoder;
 import android.location.Location;
 import android.location.LocationListener;
 import android.location.LocationManager;
 import android.support.v4.app.ActivityCompat;
 import android.support.v4.app.FragmentActivity;
 import android.os.Bundle;
+import android.support.v7.app.AppCompatActivity;
+import android.view.LayoutInflater;
 import android.view.Menu;
 import android.view.MenuInflater;
 import android.view.MenuItem;
+import android.view.View;
+import android.widget.AdapterView;
+import android.widget.ArrayAdapter;
+import android.widget.EditText;
+import android.widget.ListView;
 import android.widget.Toast;
 
 import com.google.android.gms.maps.CameraUpdateFactory;
@@ -22,7 +33,11 @@ import com.google.android.gms.maps.model.LatLng;
 import com.google.android.gms.maps.model.Marker;
 import com.google.android.gms.maps.model.MarkerOptions;
 
-public class MapsActivity extends FragmentActivity implements OnMapReadyCallback {
+import java.io.IOException;
+import java.util.ArrayList;
+import java.util.List;
+
+public class MapsActivity extends AppCompatActivity implements OnMapReadyCallback {
 
     private GoogleMap mMap;
 
@@ -55,7 +70,7 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
         // Handle item selection
         switch (item.getItemId()) {
             case R.id.address:
-                // set address
+                setAddress();
                 return true;
             case R.id.distance:
                 // set distance
@@ -107,7 +122,7 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
             @Override
             public void onProviderDisabled(String provider) {
                 Context context = getApplicationContext();
-                CharSequence text = "Your GPS is off";
+                CharSequence text = "Włącz odbiornik GPS";
                 int duration = Toast.LENGTH_LONG;
 
                 Toast toast = Toast.makeText(context, text, duration);
@@ -131,5 +146,93 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
         mMap.setMyLocationEnabled(true);
         mMap.moveCamera(CameraUpdateFactory.newLatLng(current));
         mMap.animateCamera(CameraUpdateFactory.zoomTo(12), 2000, null);
+    }
+
+    public void setAddress(){
+        AlertDialog.Builder builder = new AlertDialog.Builder(MapsActivity.this);
+        LayoutInflater inflater = MapsActivity.this.getLayoutInflater();
+        final View dialogView = inflater.inflate(R.layout.dialog_address, null);
+        builder.setView(dialogView);
+        builder.setPositiveButton(R.string.save, new DialogInterface.OnClickListener() {
+            @Override
+            public void onClick(DialogInterface dialog, int id) {
+                EditText etAddress = (EditText)dialogView.findViewById(R.id.address);
+                if(etAddress != null && !etAddress.getText().toString().isEmpty()) {
+                    try {
+                        showResults(etAddress.getText().toString());
+                    } catch (IOException e) {
+                        e.printStackTrace();
+                    }
+                }
+                dialog.dismiss();
+            }
+        });
+        builder.setNegativeButton(R.string.cancel, new DialogInterface.OnClickListener() {
+            public void onClick(DialogInterface dialog, int id) {
+                dialog.dismiss();
+            }
+        });
+
+        AlertDialog dialog = builder.create();
+        dialog.show();
+    }
+
+    public void showResults(String userAddress) throws IOException {
+        Geocoder geocoder = new Geocoder(getApplicationContext());
+        final List<Address> addresses;
+        addresses = geocoder.getFromLocationName(userAddress, 3);
+        if(addresses.size() > 0){
+            List<String> addressesArrayDisplay = new ArrayList<String>();
+            for(int i = 0; i < addresses.size(); i++){
+                String lines = "";
+                for(int j = 0; j < addresses.get(i).getMaxAddressLineIndex(); j++){
+                    if(j == 0)
+                        lines += addresses.get(i).getAddressLine(j).toString();
+                    else
+                        lines += ", " + addresses.get(i).getAddressLine(j).toString();
+                }
+                addressesArrayDisplay.add(i, lines);
+            }
+            AlertDialog.Builder builder = new AlertDialog.Builder(MapsActivity.this);
+            LayoutInflater inflater = MapsActivity.this.getLayoutInflater();
+            final View dialogView = inflater.inflate(R.layout.dialog_address_pick, null);
+            builder.setView(dialogView);
+            builder.setNegativeButton(R.string.cancel, new DialogInterface.OnClickListener() {
+                public void onClick(DialogInterface dialog, int id) {
+                    dialog.dismiss();
+                }
+            });
+
+            ListView lvAddresses = (ListView) dialogView.findViewById(R.id.lvAddresses);
+            ArrayAdapter<String> arrayAdapter = new ArrayAdapter<String>(this, android.R.layout.simple_list_item_1, addressesArrayDisplay);
+
+            lvAddresses.setAdapter(arrayAdapter);
+
+            final AlertDialog dialog = builder.create();
+            dialog.show();
+
+            lvAddresses.setOnItemClickListener(new AdapterView.OnItemClickListener() {
+                @Override
+                public void onItemClick(AdapterView<?> parent, View view, int position, long id) {
+                    if(mainMarker != null)
+                        mainMarker.remove();
+                    if(destinationCircle != null)
+                        destinationCircle.remove();
+                    destinationSelected = false;
+                    userAlerted = false;
+                    // set marker
+                    dialog.dismiss();
+                }
+            });
+
+        }
+        else{
+            Context context = getApplicationContext();
+            CharSequence text = "Nie znaleziono żadnych wyników";
+            int duration = Toast.LENGTH_LONG;
+
+            Toast toast = Toast.makeText(context, text, duration);
+            toast.show();
+        }
     }
 }
