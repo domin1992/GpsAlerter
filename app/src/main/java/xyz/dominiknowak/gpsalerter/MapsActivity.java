@@ -10,6 +10,9 @@ import android.location.Geocoder;
 import android.location.Location;
 import android.location.LocationListener;
 import android.location.LocationManager;
+import android.media.Ringtone;
+import android.media.RingtoneManager;
+import android.net.Uri;
 import android.support.v4.app.ActivityCompat;
 import android.support.v4.app.FragmentActivity;
 import android.os.Bundle;
@@ -116,6 +119,7 @@ public class MapsActivity extends AppCompatActivity implements OnMapReadyCallbac
         LocationListener locationListener = new LocationListener() {
             @Override
             public void onLocationChanged(Location location) {
+                calcUserDistance(location);
             }
 
             @Override
@@ -305,5 +309,34 @@ public class MapsActivity extends AppCompatActivity implements OnMapReadyCallbac
         userAlerted = false;
         finishLat = lat;
         finishLon = lon;
+    }
+
+    public void calcUserDistance(Location location){
+        if(finishLat != 0 && finishLon != 0) {
+            Location loc1 = new Location("");
+            loc1.setLatitude(location.getLatitude());
+            loc1.setLongitude(location.getLongitude());
+
+            Location loc2 = new Location("");
+            loc2.setLatitude(finishLat);
+            loc2.setLongitude(finishLon);
+
+            if(loc1.distanceTo(loc2) <= finishDistance && !userAlerted && destinationSelected){
+                try {
+                    Uri notification = RingtoneManager.getDefaultUri(RingtoneManager.TYPE_ALARM);
+                    Ringtone r = RingtoneManager.getRingtone(getApplicationContext(), notification);
+                    r.play();
+                } catch (Exception e) {
+                    e.printStackTrace();
+                }
+                Context context = getApplicationContext();
+                CharSequence text = "Do celu pozostaĹ‚o " + finishDistance + " metrów";
+                int duration = Toast.LENGTH_LONG;
+
+                Toast toast = Toast.makeText(context, text, duration);
+                toast.show();
+                userAlerted = true;
+            }
+        }
     }
 }
